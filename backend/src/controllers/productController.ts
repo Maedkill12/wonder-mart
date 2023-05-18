@@ -64,7 +64,7 @@ const createProduct = async (req: Request, res: Response) => {
   if (!product) {
     return res.status(400).json({ error: "Couldn't create the product" });
   }
-  res.json({ product });
+  res.status(201).json({ product });
 };
 
 const updateProduct = async (req: Request, res: Response) => {
@@ -106,7 +106,7 @@ const updateProduct = async (req: Request, res: Response) => {
     return res.status(400).json({ error: "Couldn't update the product" });
   }
 
-  res.json({ product });
+  res.status(201).json({ product });
 };
 
 const deleteProduct = async (req: Request, res: Response) => {
