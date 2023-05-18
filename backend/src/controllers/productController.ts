@@ -1,7 +1,19 @@
+import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 
-const getAllProducts = (req: Request, res: Response) => {
-  res.json("All products");
+const prisma = new PrismaClient();
+
+const getAllProducts = async (req: Request, res: Response) => {
+  let { page, limit } = req.query;
+  if (!page) {
+    page = "1";
+  }
+  if (!limit) {
+    limit = "5";
+  }
+  const skip = +limit * (+page - 1);
+  const products = await prisma.product.findMany({ skip, take: +limit });
+  res.json(products);
 };
 
 const getProduct = (req: Request, res: Response) => {
