@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, User } from "@prisma/client";
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 
@@ -34,7 +34,7 @@ const getUser = async (req: Request, res: Response) => {
 };
 
 const createUser = async (req: Request, res: Response) => {
-  const { name, email, password } = req.body;
+  const { name, email, password }: User = req.body;
   if (!name) {
     return res.status(400).json({ error: "name field is required" });
   }
@@ -61,7 +61,7 @@ const createUser = async (req: Request, res: Response) => {
 
 const updateUser = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { name, email, password } = req.body;
+  const { name, email, password }: User = req.body;
   const updateObj: { name?: string; email?: string; password?: string } = {};
   if (name) {
     updateObj.name = name;

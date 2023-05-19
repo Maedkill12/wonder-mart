@@ -50,7 +50,6 @@ model Order {
 
 model ProductsOnOrders {
   quantity Int
-  pricePerUnit Decimal
   orderId Int
   productId Int
 

@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient, Product } from "@prisma/client";
 import { Request, Response } from "express";
 
 const prisma = new PrismaClient();
@@ -33,7 +33,8 @@ const getProduct = async (req: Request, res: Response) => {
 };
 
 const createProduct = async (req: Request, res: Response) => {
-  const { name, description, price, quantity, imageURL, categoryId } = req.body;
+  const { name, description, price, quantity, imageURL, categoryId }: Product =
+    req.body;
   if (!name) {
     return res.status(400).json({ error: "name field is required" });
   }
@@ -69,11 +70,12 @@ const createProduct = async (req: Request, res: Response) => {
 
 const updateProduct = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { name, description, price, quantity, imageURL, categoryId } = req.body;
+  const { name, description, price, quantity, imageURL, categoryId }: Product =
+    req.body;
   const updateObj: {
     name?: string;
     description?: string;
-    price?: number;
+    price?: Prisma.Decimal;
     imageURL?: string;
     categoryId?: number;
     quantity?: number;
