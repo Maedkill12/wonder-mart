@@ -1,9 +1,9 @@
 import { Order, Payment, PrismaClient, Shipping } from "@prisma/client";
 import { Request, Response } from "express";
 import {
+  ProductsOnOrders,
   deleteProductsOnOrders,
   groupProducts,
-  uploadProductsOnOrders,
 } from "../constants/helpers";
 
 const prisma = new PrismaClient();
@@ -54,11 +54,17 @@ const createOrder = async (req: Request, res: Response) => {
   if (!products) {
     return res.status(400).json({ error: "products field is required" });
   }
+
+  const groupedProduct = groupProducts(products);
+
   const order = await prisma.order.create({
     data: {
       date: new Date(),
       user: {
         connect: { id: userId },
+      },
+      products: {
+        create: groupedProduct,
       },
     },
     include: { products: { select: { productId: true, quantity: true } } },
@@ -66,8 +72,6 @@ const createOrder = async (req: Request, res: Response) => {
   if (!order) {
     return res.status(400).json({ error: "Couldn't create the error" });
   }
-  const groupedProducts = groupProducts(products);
-  await uploadProductsOnOrders(groupedProducts, order.id);
 
   // Create payment
 
@@ -83,18 +87,22 @@ const updateOrder = async (req: Request, res: Response) => {
   const { address }: Shipping = req.body;
   const { products }: { products: number[] } = req.body;
 
-  const updateObj: { userId?: number } = {};
+  const updateObj: {
+    userId?: number;
+    products?: { create: ProductsOnOrders[] };
+  } = {};
   if (userId) {
     updateObj.userId = userId;
   }
   if (products) {
-    const groupedProducts = groupProducts(products);
     await deleteProductsOnOrders(+id);
-    await uploadProductsOnOrders(groupedProducts, +id);
+    const groupedProducts = groupProducts(products);
+    updateObj.products = { create: groupedProducts };
   }
+
   const order = await prisma.order.update({
     where: { id: +id },
-    data: updateObj,
+    data: { ...updateObj },
     include: { products: { select: { productId: true, quantity: true } } },
   });
   if (!order) {
@@ -105,6 +113,7 @@ const updateOrder = async (req: Request, res: Response) => {
 
 const deleteOrder = async (req: Request, res: Response) => {
   const { id } = req.params;
+  await deleteProductsOnOrders(+id);
   const order = await prisma.order.delete({
     where: { id: +id },
     include: { products: { select: { productId: true, quantity: true } } },
