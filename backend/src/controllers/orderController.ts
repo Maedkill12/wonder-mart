@@ -1,8 +1,10 @@
-import { Order, Payment, PrismaClient, Shipping } from "@prisma/client";
+import { Order, Payment, Prisma, PrismaClient, Shipping } from "@prisma/client";
 import { Request, Response } from "express";
 import {
   ProductsOnOrders,
   deleteProductsOnOrders,
+  generateTrackingNumber,
+  getTotalAmount,
   groupProducts,
 } from "../constants/helpers";
 
@@ -20,7 +22,11 @@ const getAllOrders = async (req: Request, res: Response) => {
   const orders = await prisma.order.findMany({
     skip,
     take: +limit,
-    include: { products: { select: { productId: true, quantity: true } } },
+    include: {
+      products: {
+        select: { productId: true, quantity: true, pricePerUnit: true },
+      },
+    },
   });
   res.json({ orders });
 };
@@ -29,7 +35,13 @@ const getOrder = async (req: Request, res: Response) => {
   const { id } = req.params;
   const order = await prisma.order.findUnique({
     where: { id: +id },
-    include: { products: { select: { productId: true, quantity: true } } },
+    include: {
+      products: {
+        select: { productId: true, quantity: true, pricePerUnit: true },
+      },
+      payment: true,
+      shipping: true,
+    },
   });
   if (!order) {
     return res.status(404).json({ error: "Order not found" });
@@ -39,14 +51,14 @@ const getOrder = async (req: Request, res: Response) => {
 
 const createOrder = async (req: Request, res: Response) => {
   const { userId }: Order = req.body;
-  const { paymentMethod }: Payment = req.body;
+  const { paypalEmail }: Payment = req.body;
   const { address }: Shipping = req.body;
   const { products }: { products: number[] } = req.body;
   if (!userId) {
     return res.status(400).json({ error: "userId field is required" });
   }
-  if (!paymentMethod) {
-    return res.status(400).json({ error: "paymentMethod field is required" });
+  if (!paypalEmail) {
+    return res.status(400).json({ error: "paypalEmail field is required" });
   }
   if (!address) {
     return res.status(400).json({ error: "address field is required" });
@@ -55,27 +67,45 @@ const createOrder = async (req: Request, res: Response) => {
     return res.status(400).json({ error: "products field is required" });
   }
 
-  const groupedProduct = groupProducts(products);
+  const groupedProduct = await groupProducts(products);
+  const totalAmount = getTotalAmount(groupedProduct);
+  const date = new Date();
 
   const order = await prisma.order.create({
     data: {
-      date: new Date(),
+      createdAt: date,
       user: {
         connect: { id: userId },
       },
       products: {
         create: groupedProduct,
       },
+      payment: {
+        create: {
+          createdAt: date,
+          paypalEmail,
+          amount: totalAmount,
+        },
+      },
     },
-    include: { products: { select: { productId: true, quantity: true } } },
+    include: {
+      products: {
+        select: { productId: true, quantity: true, pricePerUnit: true },
+      },
+    },
   });
   if (!order) {
     return res.status(400).json({ error: "Couldn't create the error" });
   }
 
-  // Create payment
-
-  // Create shipping
+  const trackingNumber = generateTrackingNumber(order.id);
+  await prisma.shipping.create({
+    data: {
+      crearedAt: date,
+      trackingNumber,
+      orderId: order.id,
+    },
+  });
 
   res.status(201).json({ order });
 };
@@ -83,27 +113,32 @@ const createOrder = async (req: Request, res: Response) => {
 const updateOrder = async (req: Request, res: Response) => {
   const { id } = req.params;
   const { userId }: Order = req.body;
-  const { paymentMethod }: Payment = req.body;
-  const { address }: Shipping = req.body;
   const { products }: { products: number[] } = req.body;
 
   const updateObj: {
     userId?: number;
     products?: { create: ProductsOnOrders[] };
+    payment?: { update: { amount: number } };
   } = {};
   if (userId) {
     updateObj.userId = userId;
   }
   if (products) {
     await deleteProductsOnOrders(+id);
-    const groupedProducts = groupProducts(products);
+    const groupedProducts = await groupProducts(products);
+    const totalAmount = getTotalAmount(groupedProducts);
     updateObj.products = { create: groupedProducts };
+    updateObj.payment = { update: { amount: totalAmount } };
   }
 
   const order = await prisma.order.update({
     where: { id: +id },
     data: { ...updateObj },
-    include: { products: { select: { productId: true, quantity: true } } },
+    include: {
+      products: {
+        select: { productId: true, quantity: true, pricePerUnit: true },
+      },
+    },
   });
   if (!order) {
     return res.status(404).json({ error: "Order not found" });
