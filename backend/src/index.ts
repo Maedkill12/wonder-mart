@@ -4,6 +4,7 @@ import productRoute from "./routes/productRoute";
 import userRoute from "./routes/userRoute";
 import orderRoute from "./routes/orderRoute";
 import shippingRoute from "./routes/shippingRoute";
+import paymentRoute from "./routes/paymentRoute";
 import errorHandler from "./middlewares/errorHandler";
 
 const app = express();
@@ -14,6 +15,7 @@ app.use("/products", productRoute);
 app.use("/users", userRoute);
 app.use("/orders", orderRoute);
 app.use("/shipping", shippingRoute);
+app.use("/payment", paymentRoute);
 app.use(errorHandler);
 
 app.listen(PORT, () => {
