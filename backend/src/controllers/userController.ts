@@ -16,7 +16,12 @@ const getAllUsers = async (req: Request, res: Response) => {
   const users = await prisma.user.findMany({
     skip,
     take: +limit,
-    select: { password: false, name: true, email: true },
+    select: {
+      password: false,
+      name: true,
+      email: true,
+      cart: { select: { id: true } },
+    },
   });
   res.json({ users });
 };
@@ -25,7 +30,12 @@ const getUser = async (req: Request, res: Response) => {
   const { id } = req.params;
   const user = await prisma.user.findUnique({
     where: { id: +id },
-    select: { password: false, name: true, email: true },
+    select: {
+      password: false,
+      name: true,
+      email: true,
+      cart: { select: { id: true } },
+    },
   });
   if (!user) {
     return res.status(404).json({ error: "User not found" });
@@ -54,7 +64,12 @@ const createUser = async (req: Request, res: Response) => {
         create: {},
       },
     },
-    select: { password: false, name: true, email: true },
+    select: {
+      password: false,
+      name: true,
+      email: true,
+      cart: { select: { id: true } },
+    },
   });
   if (!user) {
     return res.status(400).json({ error: "Couldn't create user" });
