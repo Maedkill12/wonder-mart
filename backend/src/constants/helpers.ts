@@ -1,6 +1,10 @@
 import { Prisma, PrismaClient } from "@prisma/client";
+import crypto from "crypto";
+import jwt from "jsonwebtoken";
 
 const prisma = new PrismaClient();
+const JWT_SECRET = process.env.JWT_SECRET || "JWT_SECRET";
+const ACCESS_TOKEN_EXPIRATION = process.env.ACCESS_TOKEN_EXPIRATION || "1h";
 
 export const groupProducts = async (
   productIds: number[]
@@ -60,6 +64,16 @@ export const generateTrackingNumber = (orderId: number): string => {
   const uniqueTrackingNumber = `${orderId}-${trackingNumber}`;
 
   return uniqueTrackingNumber;
+};
+
+export const generateRefreshToken = () => {
+  return crypto.randomBytes(64).toString("hex");
+};
+
+export const generateAccessToken = (userId: number) => {
+  return jwt.sign({ userId }, JWT_SECRET, {
+    expiresIn: ACCESS_TOKEN_EXPIRATION,
+  });
 };
 
 export interface ProductsOnOrders {

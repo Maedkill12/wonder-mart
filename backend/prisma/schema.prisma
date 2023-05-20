@@ -17,8 +17,20 @@ model User {
   password String
   orders Order[]
   cart Cart?
+  token Token?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt @default(now())
+}
+
+model Token {
+  id Int @id @default(autoincrement())
+  token String @unique
+  user User @relation(fields: [userId], references: [id])
+  expiration DateTime
+  valid Boolean @default(true)
+  userId Int @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Cart {

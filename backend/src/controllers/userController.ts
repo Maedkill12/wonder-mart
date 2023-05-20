@@ -43,40 +43,6 @@ const getUser = async (req: Request, res: Response) => {
   res.json({ user });
 };
 
-const createUser = async (req: Request, res: Response) => {
-  const { name, email, password }: User = req.body;
-  if (!name) {
-    return res.status(400).json({ error: "name field is required" });
-  }
-  if (!email) {
-    return res.status(400).json({ error: "email field is required" });
-  }
-  if (!password) {
-    return res.status(400).json({ error: "password field is required" });
-  }
-  const hash = bcrypt.hashSync(password);
-  const user = await prisma.user.create({
-    data: {
-      name,
-      email,
-      password: hash,
-      cart: {
-        create: {},
-      },
-    },
-    select: {
-      password: false,
-      name: true,
-      email: true,
-      cart: { select: { id: true } },
-    },
-  });
-  if (!user) {
-    return res.status(400).json({ error: "Couldn't create user" });
-  }
-  res.status(201).json({ user });
-};
-
 const updateUser = async (req: Request, res: Response) => {
   const { id } = req.params;
   const { name, email, password }: User = req.body;
@@ -113,4 +79,4 @@ const deleteUser = async (req: Request, res: Response) => {
   res.status(201).json({ user });
 };
 
-export { getAllUsers, getUser, createUser, updateUser, deleteUser };
+export { getAllUsers, getUser, updateUser, deleteUser };
