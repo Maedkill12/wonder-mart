@@ -50,6 +50,9 @@ const createUser = async (req: Request, res: Response) => {
       name,
       email,
       password: hash,
+      cart: {
+        create: {},
+      },
     },
     select: { password: false, name: true, email: true },
   });

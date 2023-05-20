@@ -16,25 +16,50 @@ model User {
   email String @unique
   password String
   orders Order[]
+  cart Cart?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
+}
+
+model Cart {
+  id Int @id @default(autoincrement())
+  user User @relation(fields: [userId], references: [id])
+  products ProductsOnCarts[]
+  userId Int @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProductsOnCarts {
+  cart Cart @relation(fields: [cartId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+  cartId Int
+  productId Int 
+  @@id([cartId, productId])
+}
+
+model Product {
+  id Int @id @default(autoincrement())
+  name String 
+  description String
+  price Decimal
+  quantity Int
+  categoryId Int 
+  imageURL String?
+  orders ProductsOnOrders[]
+  carts ProductsOnCarts[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
+
+  category Category @relation(fields: [categoryId], references: [id])
 }
 
 model Category {
   id Int @id @default(autoincrement())
   name String @unique
   products Product[]
-}
-
-model Product {
-  id Int @id @default(autoincrement())
-  name String
-  description String
-  price Decimal
-  quantity Int
-  categoryId Int
-  imageURL String?
-  orders ProductsOnOrders[]
-
-  category Category @relation(fields: [categoryId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
 }
 
 model Order {
@@ -43,7 +68,8 @@ model Order {
   products ProductsOnOrders[]
   payment Payment?
   shipping Shipping?
-  createdAt DateTime 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
 
   user User @relation(fields: [userId], references: [id])
 }
@@ -67,7 +93,8 @@ model Payment {
   transactionId String?
   paymentStatus String @default("Pending")
   orderId Int @unique
-  createdAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
 
   order Order @relation(fields: [orderId], references: [id])
 }
@@ -78,7 +105,8 @@ model Shipping {
   status String @default("Pending")
   address String?
   orderId Int @unique
-  crearedAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
 
   order Order @relation(fields: [orderId], references: [id])
 }

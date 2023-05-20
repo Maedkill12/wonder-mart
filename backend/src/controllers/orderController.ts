@@ -69,11 +69,9 @@ const createOrder = async (req: Request, res: Response) => {
 
   const groupedProduct = await groupProducts(products);
   const totalAmount = getTotalAmount(groupedProduct);
-  const date = new Date();
 
   const order = await prisma.order.create({
     data: {
-      createdAt: date,
       user: {
         connect: { id: userId },
       },
@@ -82,7 +80,6 @@ const createOrder = async (req: Request, res: Response) => {
       },
       payment: {
         create: {
-          createdAt: date,
           paypalEmail,
           amount: totalAmount,
         },
@@ -101,7 +98,6 @@ const createOrder = async (req: Request, res: Response) => {
   const trackingNumber = generateTrackingNumber(order.id);
   await prisma.shipping.create({
     data: {
-      crearedAt: date,
       trackingNumber,
       orderId: order.id,
     },
