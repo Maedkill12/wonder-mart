@@ -1,6 +1,7 @@
 import { Order, Payment, Prisma, PrismaClient, Shipping } from "@prisma/client";
 import { Request, Response } from "express";
 import {
+  AuthRequest,
   ProductsOnOrders,
   deleteProductsOnOrders,
   generateTrackingNumber,
@@ -31,8 +32,9 @@ const getAllOrders = async (req: Request, res: Response) => {
   res.json({ orders });
 };
 
-const getOrder = async (req: Request, res: Response) => {
+const getOrder = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
+  const { userId } = req;
   const order = await prisma.order.findUnique({
     where: { id: +id },
     include: {
@@ -43,14 +45,14 @@ const getOrder = async (req: Request, res: Response) => {
       shipping: true,
     },
   });
-  if (!order) {
+  if (!order || order.userId !== userId) {
     return res.status(404).json({ error: "Order not found" });
   }
   res.json({ order });
 };
 
-const createOrder = async (req: Request, res: Response) => {
-  const { userId }: Order = req.body;
+const createOrder = async (req: AuthRequest, res: Response) => {
+  const { userId } = req;
   const { paypalEmail }: Payment = req.body;
   const { address }: Shipping = req.body;
   const { products }: { products: number[] } = req.body;
@@ -106,10 +108,15 @@ const createOrder = async (req: Request, res: Response) => {
   res.status(201).json({ order });
 };
 
-const updateOrder = async (req: Request, res: Response) => {
+const updateOrder = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
-  const { userId }: Order = req.body;
+  const { userId } = req;
   const { products }: { products: number[] } = req.body;
+
+  const order = await prisma.order.findUnique({ where: { id: +id } });
+  if (!order || order.userId !== userId) {
+    return res.status(404).json({ error: "Order not found" });
+  }
 
   const updateObj: {
     userId?: number;
@@ -127,7 +134,7 @@ const updateOrder = async (req: Request, res: Response) => {
     updateObj.payment = { update: { amount: totalAmount } };
   }
 
-  const order = await prisma.order.update({
+  await prisma.order.update({
     where: { id: +id },
     data: { ...updateObj },
     include: {
@@ -136,22 +143,22 @@ const updateOrder = async (req: Request, res: Response) => {
       },
     },
   });
-  if (!order) {
-    return res.status(404).json({ error: "Order not found" });
-  }
   res.json({ order });
 };
 
-const deleteOrder = async (req: Request, res: Response) => {
+const deleteOrder = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
+  const { userId } = req;
+  const order = await prisma.order.findUnique({ where: { id: +id } });
+  if (!order || order.id !== userId) {
+    return res.status(404).json({ error: "Order not found" });
+  }
   await deleteProductsOnOrders(+id);
-  const order = await prisma.order.delete({
+  await prisma.order.delete({
     where: { id: +id },
     include: { products: { select: { productId: true, quantity: true } } },
   });
-  if (!order) {
-    return res.status(404).json({ error: "Order not found" });
-  }
+
   res.json({ order });
 };
 

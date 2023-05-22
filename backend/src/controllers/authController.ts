@@ -2,12 +2,13 @@ import { PrismaClient, User } from "@prisma/client";
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import {
+  AuthRequest,
   generateAccessToken,
   generateRefreshToken,
 } from "../constants/helpers";
+import { REFRESH_TOKEN_EXPIRATION } from "../constants";
 
 const prisma = new PrismaClient();
-const REFRESH_TOKEN_EXPIRATION = process.env.REFRESH_TOKEN_EXPIRATION || 15; // in minutes
 
 const singup = async (req: Request, res: Response) => {
   const { name, email, password }: User = req.body;
@@ -92,12 +93,10 @@ const login = async (req: Request, res: Response) => {
   res.json({ accessToken });
 };
 
-const refresh = async (req: Request, res: Response) => {
+const refresh = async (req: AuthRequest, res: Response) => {
   const { refreshToken } = req.cookies;
-  const { userId } = req.body;
-  if (!userId) {
-    return res.status(400).json({ error: "userId field is required" });
-  }
+  const { userId } = req;
+
   if (!refreshToken) {
     return res.status(400).json({ error: "Invalid token or userId" });
   }

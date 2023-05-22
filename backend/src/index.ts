@@ -9,6 +9,7 @@ import paymentRoute from "./routes/paymentRoute";
 import cartRoute from "./routes/cartRoute";
 import authRoute from "./routes/authRoute";
 import errorHandler from "./middlewares/errorHandler";
+import authentication from "./middlewares/authentication";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -16,11 +17,11 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(cookie());
 app.use("/products", productRoute);
-app.use("/users", userRoute);
-app.use("/orders", orderRoute);
-app.use("/shipping", shippingRoute);
-app.use("/payment", paymentRoute);
-app.use("/cart", cartRoute);
+app.use("/users", authentication, userRoute);
+app.use("/orders", authentication, orderRoute);
+app.use("/shipping", authentication, shippingRoute);
+app.use("/payment", authentication, paymentRoute);
+app.use("/cart", authentication, cartRoute);
 app.use("/auth", authRoute);
 app.use(errorHandler);
 

@@ -1,10 +1,10 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
+import { ACCESS_TOKEN_EXPIRATION, JWT_SECRET } from ".";
+import { Request } from "express";
 
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || "JWT_SECRET";
-const ACCESS_TOKEN_EXPIRATION = process.env.ACCESS_TOKEN_EXPIRATION || "1h";
 
 export const groupProducts = async (
   productIds: number[]
@@ -80,4 +80,8 @@ export interface ProductsOnOrders {
   quantity: number;
   pricePerUnit: Prisma.Decimal;
   productId: number;
+}
+
+export interface AuthRequest extends Request {
+  userId: number;
 }

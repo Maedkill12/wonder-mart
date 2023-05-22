@@ -1,6 +1,7 @@
 import { PrismaClient, User } from "@prisma/client";
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
+import { AuthRequest } from "../constants/helpers";
 
 const prisma = new PrismaClient();
 
@@ -43,8 +44,9 @@ const getUser = async (req: Request, res: Response) => {
   res.json({ user });
 };
 
-const updateUser = async (req: Request, res: Response) => {
+const updateUser = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
+  const { userId } = req;
   const { name, email, password }: User = req.body;
   const updateObj: { name?: string; email?: string; password?: string } = {};
   if (name) {
@@ -57,7 +59,7 @@ const updateUser = async (req: Request, res: Response) => {
     updateObj.password = bcrypt.hashSync(password);
   }
   const user = await prisma.user.update({
-    where: { id: +id },
+    where: { id: userId },
     data: updateObj,
     select: { password: false, name: true, email: true },
   });
@@ -67,10 +69,11 @@ const updateUser = async (req: Request, res: Response) => {
   res.status(201).json({ user });
 };
 
-const deleteUser = async (req: Request, res: Response) => {
+const deleteUser = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
+  const { userId } = req;
   const user = await prisma.user.delete({
-    where: { id: +id },
+    where: { id: userId },
     select: { password: false, name: true, email: true },
   });
   if (!user) {
